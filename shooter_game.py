@@ -1,4 +1,4 @@
-from random import choice
+from random import choice,randint
 from pygame import *
 
 init()
@@ -24,7 +24,7 @@ bg_y1 = 0
 bg_y2 = -HEIGHT
 
 player_img = image.load("spaceship.png")
-
+enemy_img = image.load("alien.png")
 all_sprites = sprite.Group()
 
 class Sprite(sprite.Sprite):
@@ -39,10 +39,11 @@ class Sprite(sprite.Sprite):
 
 class Player(Sprite):
     def __init__(self, sprite_img, width, height, x, y):
+
         super().__init__(sprite_img, width, height, x, y)
         self.hp = 100
-        self.speed = 2
-        self.bg_speed = 2
+        self.speed = 3
+        self.bg_speed = 3
         self.max_speed = 30
 
     def update(self):
@@ -65,18 +66,31 @@ class Player(Sprite):
 
 
 class Enemy(Sprite):
-    def __init__(self, sprite_img, width, height, x, y):
-        super().__init__(sprite_img, width, height, x, y)
+    def __init__(self, sprite_img, width, height):
+        rand_x = randint(0,WIDTH - width)
+        super().__init__(sprite_img, width, height, rand_x, -200)
         self.damage = 100
-        self.speed = 2        
+        self.speed = 4
+        enemys.add(self)
+
+    def update(self):
+        self.rect.y += player.bg_speed + 2
+        if self.rect.y > HEIGHT:
+            self.kill()
+
 
 
 player = Player(player_img, 100, 70, 300, 300)
 enemys = sprite.Group()
+enemy1 = Enemy(enemy_img,80,60)
 
 run = True
 finish = False
 bg_speed = 0
+
+start_time = time.get_ticks()
+enemy_spawn_time = time.get_ticks()
+spawn_interval = randint(500,3500)
 while run:
     for e in event.get():
         if e.type == QUIT:
@@ -100,10 +114,21 @@ while run:
     if player.hp <= 0:
         finish = True
 
+    now = time.get_ticks()
+    if now - enemy_spawn_time > spawn_interval:
+        enemy1 = Enemy(enemy_img,80,60)
+        enemy_spawn_time = time.get_ticks()
+        spawn_interval = randint(500,3500)
+
+    colide_list = sprite.spritecollide(player , enemys, True,sprite.collide_mask)
+    if len(colide_list) > 0 :
+        finish = True 
+
     all_sprites.draw(window)
     if not finish:
         all_sprites.update()
     if finish:
-        window.blit(game_over_text, (300, 300))
+        window.blit(
+            game_over_text, (WIDTH/2 - game_over_text.get_width()/2, HEIGHT/2 - game_over_text.get_height()/2))
     display.update()
     clock.tick(FPS)
